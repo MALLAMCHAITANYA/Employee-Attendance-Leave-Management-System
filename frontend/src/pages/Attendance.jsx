@@ -134,6 +134,24 @@ const Attendance = () => {
     }
   };
 
+  const handleExportCSV = async () => {
+    try {
+      setError(null);
+      const res = await api.get('/attendance/export', { responseType: 'blob' });
+      const blob = new Blob([res.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `attendance_history_${new Date().getFullYear()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to export attendance CSV');
+    }
+  };
+
   const goPrevMonth = () => {
     if (viewMonth === 0) {
       setViewMonth(11);
@@ -160,11 +178,25 @@ const Attendance = () => {
 
   return (
     <div className="p-6">
-      <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Attendance</h2>
-      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-        Use Attendance Sign In when you start work and Sign Out when you leave. Minimum {minWorkHours} hrs/day = Present.
-        Click a date on the calendar to see details.
-      </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Attendance</h2>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            Use Attendance Sign In when you start work and Sign Out when you leave. Minimum {minWorkHours} hrs/day = Present.
+            Click a date on the calendar to see details.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={handleExportCSV}
+          className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition-colors flex items-center gap-1.5"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Export CSV
+        </button>
+      </div>
 
       {error && (
         <div className="mt-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 text-sm border border-red-100 dark:border-red-800">

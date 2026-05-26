@@ -60,20 +60,35 @@ const Holidays = () => {
                   </p>
                 ) : (
                   <ul className="space-y-2 text-sm">
-                    {list.map((h, i) => (
-                      <li
-                        key={`${h.dateStr}-${i}`}
-                        className="text-slate-700 dark:text-slate-300 leading-snug"
-                      >
-                        <span className="font-semibold text-slate-900 dark:text-slate-100 mr-1">
-                          {String(h.date.getDate()).padStart(2, '0')}
-                        </span>
-                        <span className="text-slate-500 dark:text-slate-400 mr-1.5">
-                          {h.dayName}
-                        </span>
-                        <span className="text-slate-700 dark:text-slate-300">{h.name}</span>
-                      </li>
-                    ))}
+                    {list.map((h, i) => {
+                      const today = new Date();
+                      const isToday = today.getDate() === h.date.getDate() && today.getMonth() === h.date.getMonth() && today.getFullYear() === h.date.getFullYear();
+                      return (
+                        <li
+                          key={`${h.dateStr}-${i}`}
+                          className={`text-slate-700 dark:text-slate-300 leading-snug p-1.5 rounded-md transition-all flex items-center justify-between ${
+                            isToday
+                              ? 'bg-primary-50 dark:bg-primary-950/30 text-primary-900 dark:text-primary-100 ring-2 ring-primary-500 font-semibold'
+                              : ''
+                          }`}
+                        >
+                          <div>
+                            <span className="font-semibold text-slate-900 dark:text-slate-100 mr-1">
+                              {String(h.date.getDate()).padStart(2, '0')}
+                            </span>
+                            <span className="text-slate-500 dark:text-slate-400 mr-1.5">
+                              {h.dayName}
+                            </span>
+                            <span>{h.name}</span>
+                          </div>
+                          {isToday && (
+                            <span className="ml-2 px-1.5 py-0.5 rounded bg-primary-500 text-white text-[9px] font-bold uppercase tracking-wider flex-shrink-0">
+                              Today
+                            </span>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
               </div>

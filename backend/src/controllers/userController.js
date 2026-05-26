@@ -10,7 +10,7 @@ export const getMe = async (req, res, next) => {
 
 export const updateMe = async (req, res, next) => {
   try {
-    const { name, dob, age, email, notificationPreferences, annualLeaveDays } = req.body;
+    const { name, dob, age, email, notificationPreferences, annualLeaveDays, avatar } = req.body;
 
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: 'User not found' });
@@ -19,9 +19,12 @@ export const updateMe = async (req, res, next) => {
     if (dob !== undefined) user.dob = dob;
     if (age !== undefined) user.age = age;
     if (email !== undefined) user.email = email;
+    if (avatar !== undefined) user.avatar = avatar;
     if (annualLeaveDays !== undefined) {
-      const n = Number(annualLeaveDays);
-      user.annualLeaveDays = Number.isFinite(n) && n >= 0 ? n : null;
+      if (req.user.role === 'manager' || req.user.role === 'admin') {
+        const n = Number(annualLeaveDays);
+        user.annualLeaveDays = Number.isFinite(n) && n >= 0 ? n : null;
+      }
     }
     if (notificationPreferences !== undefined && typeof notificationPreferences === 'object') {
       user.notificationPreferences = user.notificationPreferences || {};

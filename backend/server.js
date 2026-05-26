@@ -11,6 +11,7 @@ import attendanceRoutes from './src/routes/attendanceRoutes.js';
 import leaveRoutes from './src/routes/leaveRoutes.js';
 import feedbackRoutes from './src/routes/feedbackRoutes.js';
 import userRoutes from './src/routes/userRoutes.js';
+import notificationRoutes from './src/routes/notificationRoutes.js';
 
 const app = express();
 
@@ -33,6 +34,7 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/leaves', leaveRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'Employee Portal API running' });

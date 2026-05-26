@@ -1,4 +1,5 @@
 import Leave from '../models/Leave.js';
+import Notification from '../models/Notification.js';
 import { LEAVE_LIMITS, TOTAL_LEAVE_DAYS } from '../config/leave.js';
 
 const VALID_TYPES = Object.keys(LEAVE_LIMITS);
@@ -51,9 +52,10 @@ export const createLeave = async (req, res, next) => {
     }
 
     const totalUsed = await getUsedDaysInYear(req.user._id, year);
-    if (totalUsed + days > TOTAL_LEAVE_DAYS) {
+    const limit = req.user.annualLeaveDays || TOTAL_LEAVE_DAYS;
+    if (totalUsed + days > limit) {
       return res.status(400).json({
-        message: `Total leave per year cannot exceed ${TOTAL_LEAVE_DAYS} days. You have used ${totalUsed} days so far.`
+        message: `Total leave per year cannot exceed ${limit} days. You have used ${totalUsed} days so far.`
       });
     }
 
@@ -74,10 +76,18 @@ export const createLeave = async (req, res, next) => {
 
 export const getMyLeaves = async (req, res, next) => {
   try {
-    const { type } = req.query;
+    const { type, status, startDate, endDate } = req.query;
     const filter = { employee: req.user._id };
     if (type && VALID_TYPES.includes(type)) {
       filter.leaveType = type;
+    }
+    if (status && ['Pending', 'Approved', 'Rejected'].includes(status)) {
+      filter.status = status;
+    }
+    if (startDate || endDate) {
+      filter.fromDate = {};
+      if (startDate) filter.fromDate.$gte = new Date(startDate);
+      if (endDate) filter.fromDate.$lte = new Date(endDate);
     }
     const leaves = await Leave.find(filter).sort({ createdAt: -1 });
     res.json(leaves);
@@ -100,11 +110,12 @@ export const getLeaveBalance = async (req, res, next) => {
       byType[t] = { limit, used, remaining: Math.max(0, limit - used) };
     }
 
+    const limit = req.user.annualLeaveDays || TOTAL_LEAVE_DAYS;
     res.json({
       year,
-      total: TOTAL_LEAVE_DAYS,
+      total: limit,
       used: totalUsed,
-      remaining: Math.max(0, TOTAL_LEAVE_DAYS - totalUsed),
+      remaining: Math.max(0, limit - totalUsed),
       byType
     });
   } catch (error) {
@@ -118,10 +129,15 @@ export const getLeaveTypes = (req, res) => {
 
 export const getPendingLeaves = async (req, res, next) => {
   try {
-    const { type } = req.query;
+    const { type, startDate, endDate } = req.query;
     const filter = { status: 'Pending' };
     if (type && VALID_TYPES.includes(type)) {
       filter.leaveType = type;
+    }
+    if (startDate || endDate) {
+      filter.fromDate = {};
+      if (startDate) filter.fromDate.$gte = new Date(startDate);
+      if (endDate) filter.fromDate.$lte = new Date(endDate);
     }
     const leaves = await Leave.find(filter)
       .populate('employee', 'name email role')
@@ -150,6 +166,16 @@ export const updateLeaveStatus = async (req, res, next) => {
     if (managerComment) leave.managerComment = managerComment;
 
     await leave.save();
+
+    try {
+      await Notification.create({
+        recipient: leave.employee,
+        message: `Your ${leave.leaveType} leave request from ${new Date(leave.fromDate).toLocaleDateString()} to ${new Date(leave.toDate).toLocaleDateString()} (${leave.days} days) has been ${status.toLowerCase()}.`,
+        type: 'leave_approval'
+      });
+    } catch (err) {
+      console.error('Failed to create notification:', err);
+    }
 
     res.json(leave);
   } catch (error) {

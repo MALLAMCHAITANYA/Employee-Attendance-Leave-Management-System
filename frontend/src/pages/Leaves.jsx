@@ -16,25 +16,42 @@ const Leaves = () => {
   const [pendingLeaves, setPendingLeaves] = useState([]);
   const [balance, setBalance] = useState(null);
   const [filterType, setFilterType] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [filterStartDate, setFilterStartDate] = useState('');
+  const [filterEndDate, setFilterEndDate] = useState('');
   const [submitError, setSubmitError] = useState(null);
 
   const loadData = async () => {
     const year = new Date().getFullYear();
+    let queryParams = [];
+    if (filterType) queryParams.push(`type=${encodeURIComponent(filterType)}`);
+    if (filterStatus) queryParams.push(`status=${encodeURIComponent(filterStatus)}`);
+    if (filterStartDate) queryParams.push(`startDate=${encodeURIComponent(filterStartDate)}`);
+    if (filterEndDate) queryParams.push(`endDate=${encodeURIComponent(filterEndDate)}`);
+    const queryString = queryParams.length > 0 ? '?' + queryParams.join('&') : '';
+
+    const pendingParams = [
+      filterType && `type=${encodeURIComponent(filterType)}`,
+      filterStartDate && `startDate=${encodeURIComponent(filterStartDate)}`,
+      filterEndDate && `endDate=${encodeURIComponent(filterEndDate)}`
+    ].filter(Boolean).join('&');
+    const pendingQueryString = pendingParams ? '?' + pendingParams : '';
+
     const [myRes, balanceRes] = await Promise.all([
-      api.get('/leaves/me' + (filterType ? `?type=${encodeURIComponent(filterType)}` : '')),
+      api.get('/leaves/me' + queryString),
       api.get(`/leaves/balance?year=${year}`)
     ]);
     setLeaves(myRes.data);
     setBalance(balanceRes.data);
     if (user.role === 'manager' || user.role === 'admin') {
-      const pending = await api.get('/leaves/pending' + (filterType ? `?type=${encodeURIComponent(filterType)}` : ''));
+      const pending = await api.get('/leaves/pending' + pendingQueryString);
       setPendingLeaves(pending.data);
     }
   };
 
   useEffect(() => {
     loadData().catch(console.error);
-  }, [filterType]);
+  }, [filterType, filterStatus, filterStartDate, filterEndDate]);
 
   const handleChange = e => {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
@@ -163,18 +180,71 @@ const Leaves = () => {
           <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
             My Leave Requests
           </h3>
-          <div className="mt-2 flex items-center gap-2">
-            <label className="text-slate-600 dark:text-slate-400">Filter by type:</label>
-            <select
-              value={filterType}
-              onChange={e => setFilterType(e.target.value)}
-              className="border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500"
-            >
-              <option value="">All</option>
-              {LEAVE_TYPES.map(t => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
+          <div className="mt-2 space-y-2 border-b border-slate-100 dark:border-slate-700 pb-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <label className="text-slate-600 dark:text-slate-400">Type:</label>
+                <select
+                  value={filterType}
+                  onChange={e => setFilterType(e.target.value)}
+                  className="border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="">All</option>
+                  {LEAVE_TYPES.map(t => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <label className="text-slate-600 dark:text-slate-400">Status:</label>
+                <select
+                  value={filterStatus}
+                  onChange={e => setFilterStatus(e.target.value)}
+                  className="border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="">All</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Rejected">Rejected</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1">
+                <label className="text-slate-500 dark:text-slate-400">From:</label>
+                <input
+                  type="date"
+                  value={filterStartDate}
+                  onChange={e => setFilterStartDate(e.target.value)}
+                  className="border border-slate-200 dark:border-slate-600 rounded-lg px-1.5 py-0.5 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-1 focus:ring-primary-500"
+                />
+              </div>
+              <div className="flex items-center gap-1">
+                <label className="text-slate-500 dark:text-slate-400">To:</label>
+                <input
+                  type="date"
+                  value={filterEndDate}
+                  onChange={e => setFilterEndDate(e.target.value)}
+                  className="border border-slate-200 dark:border-slate-600 rounded-lg px-1.5 py-0.5 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-1 focus:ring-primary-500"
+                />
+              </div>
+              {(filterType || filterStatus || filterStartDate || filterEndDate) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFilterType('');
+                    setFilterStatus('');
+                    setFilterStartDate('');
+                    setFilterEndDate('');
+                  }}
+                  className="text-xs text-red-500 hover:text-red-600 font-medium"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
           </div>
           <div className="mt-3 max-h-64 overflow-auto text-xs space-y-2">
             {leaves.length === 0 && (

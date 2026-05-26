@@ -20,7 +20,10 @@ const userSchema = new mongoose.Schema(
       feedbackReminders: { type: Boolean, default: false }
     },
     /** Annual leave quota (days per year). If not set, default is used (e.g. 20). */
-    annualLeaveDays: { type: Number, default: null }
+    annualLeaveDays: { type: Number, default: null },
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date },
+    avatar: { type: String, default: '' }
   },
   { timestamps: true }
 );

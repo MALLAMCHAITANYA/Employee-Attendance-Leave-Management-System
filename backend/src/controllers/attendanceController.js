@@ -209,3 +209,43 @@ export const signOut = async (req, res, next) => {
     next(error);
   }
 };
+
+export const exportAttendance = async (req, res, next) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const filter = { user: req.user._id };
+
+    if (startDate || endDate) {
+      filter.date = {};
+      if (startDate) filter.date.$gte = getDateOnly(new Date(startDate));
+      if (endDate) filter.date.$lte = getDateOnly(new Date(endDate));
+    }
+
+    const rawRecords = await Attendance.find(filter)
+      .sort({ date: -1, loginTime: -1 })
+      .lean();
+
+    const aggregated = aggregateByDate(rawRecords);
+
+    const csvRows = ['Date,First Sign In,Last Sign Out,Total Hours,Status'];
+    const formatTime = (isoString) => {
+      if (!isoString) return 'N/A';
+      const d = new Date(isoString);
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    };
+
+    for (const r of aggregated) {
+      const formattedDate = r.date.toISOString().split('T')[0];
+      const firstIn = formatTime(r.firstSignIn);
+      const lastOut = formatTime(r.lastSignOut);
+      const hrs = r.totalHours != null ? r.totalHours : '0';
+      csvRows.push(`"${formattedDate}","${firstIn}","${lastOut}","${hrs}","${r.status}"`);
+    }
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=attendance_history.csv');
+    res.send(csvRows.join('\n'));
+  } catch (error) {
+    next(error);
+  }
+};
