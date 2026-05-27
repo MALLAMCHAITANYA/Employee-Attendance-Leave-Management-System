@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import User from '../models/User.js';
 import { ROLES, ROLE_VALUES } from '../utils/roles.js';
+import sendEmail from '../utils/sendEmail.js';
 
 const generateToken = (id, role) => {
   return jwt.sign({ id, role }, process.env.JWT_SECRET, {
@@ -105,12 +106,48 @@ export const forgotPassword = async (req, res, next) => {
     user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
     await user.save();
 
-    // Log the reset link to the console for easy retrieval in local environment
-    console.log('\n=================== PASSWORD RESET LINK ===================');
-    console.log(`Reset Link: http://localhost:5173/login?token=${resetToken}`);
-    console.log('===========================================================\n');
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const resetUrl = `${clientUrl}/login?token=${resetToken}`;
 
-    res.json({ message: 'Password reset link generated. Check the backend server terminal console!' });
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+        <h2 style="color: #1e293b;">Work Space Password Reset</h2>
+        <p style="color: #475569; font-size: 14px; line-height: 1.6;">
+          You requested to reset your password for your Work Space employee portal account. 
+          Please click the button below to set a new password. This link is valid for 1 hour.
+        </p>
+        <div style="margin: 24px 0;">
+          <a href="${resetUrl}" style="background-color: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px; display: inline-block;">
+            Reset Password
+          </a>
+        </div>
+        <p style="color: #64748b; font-size: 12px; line-height: 1.6;">
+          If the button above does not work, copy and paste this URL into your browser: <br/>
+          <a href="${resetUrl}" style="color: #3b82f6;">${resetUrl}</a>
+        </p>
+        <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+        <p style="color: #94a3b8; font-size: 11px;">
+          If you did not request this password reset, you can safely ignore this email.
+        </p>
+      </div>
+    `;
+
+    const textContent = `You requested a password reset. Please use the following link to configure a new password: ${resetUrl}`;
+
+    // Send email using utility helper
+    const mailResult = await sendEmail({
+      to: user.email,
+      subject: 'Work Space - Reset Your Password',
+      html: htmlContent,
+      text: textContent
+    });
+
+    const isMock = mailResult && mailResult.mock;
+    res.json({
+      message: isMock 
+        ? 'Password reset link generated. Check the backend server terminal console!' 
+        : 'Password reset link sent to your email address!'
+    });
   } catch (error) {
     next(error);
   }
