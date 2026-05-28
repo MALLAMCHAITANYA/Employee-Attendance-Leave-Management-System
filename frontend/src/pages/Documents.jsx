@@ -119,7 +119,7 @@ const Documents = () => {
   });
 
   const isAdmin = user?.role === 'admin';
-  const apiBaseUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5000';
+  const apiBaseUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : (import.meta.env.PROD ? '' : 'http://localhost:5000');
 
   return (
     <div className="p-6 space-y-6 text-xs text-slate-800 dark:text-slate-200">
