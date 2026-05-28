@@ -74,6 +74,17 @@ const Leaves = () => {
     loadData();
   };
 
+  const handleCancelLeave = async (id) => {
+    if (window.confirm('Are you sure you want to cancel this leave request?')) {
+      try {
+        await api.post(`/leaves/${id}/cancel`);
+        loadData();
+      } catch (err) {
+        alert(err?.response?.data?.message || 'Failed to cancel leave request');
+      }
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div>
@@ -270,17 +281,30 @@ const Leaves = () => {
                     </p>
                   )}
                 </div>
-                <span
-                  className={`px-2 py-0.5 rounded-full text-[11px] ${
-                    l.status === 'Approved'
-                      ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300'
-                      : l.status === 'Rejected'
-                      ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300'
-                      : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300'
-                  }`}
-                >
-                  {l.status}
-                </span>
+                <div className="flex flex-col items-end gap-1.5">
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[11px] ${
+                      l.status === 'Approved'
+                        ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300'
+                        : l.status === 'Rejected'
+                        ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300'
+                        : l.status === 'Cancelled'
+                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                        : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300'
+                    }`}
+                  >
+                    {l.status}
+                  </span>
+                  {(l.status === 'Pending' || l.status === 'Approved') && (
+                    <button
+                      type="button"
+                      onClick={() => handleCancelLeave(l._id)}
+                      className="text-[10px] text-red-500 hover:text-red-600 hover:underline font-semibold"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>

@@ -19,6 +19,16 @@ const userSchema = new mongoose.Schema(
       attendanceAlerts: { type: Boolean, default: true },
       feedbackReminders: { type: Boolean, default: false }
     },
+    department: {
+      type: String,
+      default: 'General'
+    },
+    branch: {
+      type: String,
+      default: 'HQ'
+    },
+    twoFactorSecret: { type: String },
+    twoFactorEnabled: { type: Boolean, default: false },
     /** Annual leave quota (days per year). If not set, default is used (e.g. 20). */
     annualLeaveDays: { type: Number, default: null },
     resetPasswordToken: { type: String },

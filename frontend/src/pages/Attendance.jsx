@@ -309,7 +309,7 @@ const Attendance = () => {
                           ? '!bg-primary-100 dark:!bg-primary-500/25 ring-inset ring-2 ring-primary-500 dark:ring-primary-400 !text-primary-900 dark:!text-primary-100'
                           : ''}
                         ${isSelected && !isToday
-                          ? '!bg-primary-50 dark:!bg-primary-900/30 ring-inset ring-2 ring-primary-500 dark:ring-primary-400'
+                          ? '!bg-primary-50 dark:!bg-primary-600/10 ring-inset ring-2 ring-primary-500 dark:ring-primary-400'
                           : ''}
                       `}
                     >

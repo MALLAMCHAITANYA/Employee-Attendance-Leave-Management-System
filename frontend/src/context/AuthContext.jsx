@@ -14,6 +14,9 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       const res = await api.post('/auth/login', { email, password, role });
+      if (res.data && res.data.require2FA) {
+        return res.data;
+      }
       const { token, user: u } = res.data;
       localStorage.setItem('emp_token', token);
       localStorage.setItem('emp_user', JSON.stringify(u));

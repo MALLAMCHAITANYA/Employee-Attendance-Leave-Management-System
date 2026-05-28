@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import User from '../models/User.js';
 import { ROLES, ROLE_VALUES } from '../utils/roles.js';
 import sendEmail from '../utils/sendEmail.js';
+import AuditLog from '../models/AuditLog.js';
 
 const generateToken = (id, role) => {
   return jwt.sign({ id, role }, process.env.JWT_SECRET, {
@@ -12,7 +13,7 @@ const generateToken = (id, role) => {
 
 export const signup = async (req, res, next) => {
   try {
-    const { name, email, password, role, dob, age } = req.body;
+    const { name, email, password, role, dob, age, department, branch } = req.body;
 
     if (!name || !email || !password || !role) {
       return res.status(400).json({ message: 'All required fields missing' });
@@ -27,7 +28,14 @@ export const signup = async (req, res, next) => {
       return res.status(400).json({ message: 'Email already registered' });
     }
 
-    const user = await User.create({ name, email, password, role, dob, age });
+    const user = await User.create({ name, email, password, role, dob, age, department, branch });
+
+    await AuditLog.create({
+      user: user._id,
+      action: 'SIGNUP',
+      details: `Signed up as a new user with role ${role} in department ${user.department}`,
+      ipAddress: req.ip
+    });
 
     const token = generateToken(user._id, user.role);
 
@@ -39,7 +47,10 @@ export const signup = async (req, res, next) => {
         email: user.email,
         role: user.role,
         dob: user.dob,
-        age: user.age
+        age: user.age,
+        department: user.department,
+        branch: user.branch,
+        twoFactorEnabled: user.twoFactorEnabled
       }
     });
   } catch (error) {
@@ -61,6 +72,18 @@ export const login = async (req, res, next) => {
       return res.status(403).json({ message: 'Role mismatch' });
     }
 
+    if (user.twoFactorEnabled) {
+      const tempToken = jwt.sign({ tempId: user._id }, process.env.JWT_SECRET, { expiresIn: '5m' });
+      return res.json({ require2FA: true, tempToken });
+    }
+
+    await AuditLog.create({
+      user: user._id,
+      action: 'LOGIN',
+      details: 'Logged in successfully',
+      ipAddress: req.ip
+    });
+
     const token = generateToken(user._id, user.role);
 
     res.json({
@@ -71,7 +94,10 @@ export const login = async (req, res, next) => {
         email: user.email,
         role: user.role,
         dob: user.dob,
-        age: user.age
+        age: user.age,
+        department: user.department,
+        branch: user.branch,
+        twoFactorEnabled: user.twoFactorEnabled
       }
     });
   } catch (error) {
@@ -81,6 +107,14 @@ export const login = async (req, res, next) => {
 
 export const logout = async (req, res, next) => {
   try {
+    if (req.user) {
+      await AuditLog.create({
+        user: req.user._id,
+        action: 'LOGOUT',
+        details: 'Logged out successfully',
+        ipAddress: req.ip
+      });
+    }
     res.json({ message: 'Logged out successfully' });
   } catch (error) {
     next(error);

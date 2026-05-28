@@ -5,7 +5,8 @@ import {
   getLeaveBalance,
   getLeaveTypes,
   getPendingLeaves,
-  updateLeaveStatus
+  updateLeaveStatus,
+  cancelLeave
 } from '../controllers/leaveController.js';
 import { protect, requireRole } from '../middleware/authMiddleware.js';
 import { ROLES } from '../utils/roles.js';
@@ -13,6 +14,7 @@ import { ROLES } from '../utils/roles.js';
 const router = express.Router();
 
 router.post('/', protect, createLeave);
+router.post('/:id/cancel', protect, cancelLeave);
 router.get('/me', protect, getMyLeaves);
 router.get('/balance', protect, getLeaveBalance);
 router.get('/types', protect, getLeaveTypes);

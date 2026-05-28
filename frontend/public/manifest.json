@@ -1,0 +1,15 @@
+{
+  "short_name": "Work Space",
+  "name": "Work Space - Employee Portal",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#3b82f6",
+  "background_color": "#0f172a"
+}

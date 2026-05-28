@@ -10,7 +10,7 @@ export const getMe = async (req, res, next) => {
 
 export const updateMe = async (req, res, next) => {
   try {
-    const { name, dob, age, email, notificationPreferences, annualLeaveDays, avatar } = req.body;
+    const { name, dob, age, email, notificationPreferences, annualLeaveDays, avatar, department, branch } = req.body;
 
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: 'User not found' });
@@ -20,6 +20,8 @@ export const updateMe = async (req, res, next) => {
     if (age !== undefined) user.age = age;
     if (email !== undefined) user.email = email;
     if (avatar !== undefined) user.avatar = avatar;
+    if (department !== undefined && req.user.role === 'admin') user.department = department;
+    if (branch !== undefined && req.user.role === 'admin') user.branch = branch;
     if (annualLeaveDays !== undefined) {
       if (req.user.role === 'manager' || req.user.role === 'admin') {
         const n = Number(annualLeaveDays);
@@ -44,6 +46,18 @@ export const updateMe = async (req, res, next) => {
     const u = user.toObject();
     delete u.password;
     res.json(u);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAllUsers = async (req, res, next) => {
+  try {
+    const list = await User.find({})
+      .select('name email role department branch')
+      .sort({ name: 1 })
+      .lean();
+    res.json(list);
   } catch (error) {
     next(error);
   }
