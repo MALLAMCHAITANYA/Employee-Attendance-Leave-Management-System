@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "install-all": "npm install --production=false --prefix backend && npm install --production=false --prefix frontend",
-    "build": "npm run build --prefix frontend",
+    "build": "npm run install-all && npm run build --prefix frontend",
     "start": "node backend/server.js",
     "backend": "npm run dev --prefix backend",
     "frontend": "npm run dev --prefix frontend"
