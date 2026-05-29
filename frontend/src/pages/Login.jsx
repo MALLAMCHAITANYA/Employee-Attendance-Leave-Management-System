@@ -21,6 +21,7 @@ const Login = () => {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   // 2FA States
   const [require2FA, setRequire2FA] = useState(false);
@@ -41,6 +42,7 @@ const Login = () => {
     e.preventDefault();
     setError(null);
     setSuccessMessage(null);
+    setSubmitting(true);
     try {
       if (mode === 'login') {
         const res = await login(form.email, form.password, form.role);
@@ -72,6 +74,8 @@ const Login = () => {
       }
     } catch (err) {
       setError(err?.response?.data?.message || 'Something went wrong');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -363,10 +367,10 @@ const Login = () => {
 
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || submitting}
                   className="w-full mt-2 bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium py-2.5 rounded-lg disabled:opacity-60"
                 >
-                  {loading
+                  {loading || submitting
                     ? 'Please wait...'
                     : mode === 'login'
                     ? 'Login'
